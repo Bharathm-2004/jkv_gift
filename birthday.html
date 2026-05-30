@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>பிறந்தநாள் வாழ்த்துக்கள்!</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Thambi+2:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #ff4d8d;
+    --gold: #ffd700;
+    --purple: #9b59b6;
+    --orange: #ff7043;
+    --cyan: #00e5ff;
+    --green: #00ff88;
+    --bg: #0a0015;
+    --card: rgba(255,255,255,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: #fff; font-family: 'Noto Sans Tamil', sans-serif; overflow-x: hidden; min-height: 100vh; }
+
+  #stars-canvas, #confetti-canvas, #particles-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  #stars-canvas { z-index: 0; } #particles-canvas { z-index: 0; } #confetti-canvas { z-index: 1; }
+  .content { position: relative; z-index: 10; }
+
+  /* HERO */
+  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; position: relative; }
+  .cake-emoji { font-size: 80px; animation: cakeBounce 1.5s ease-in-out infinite; display: block; margin-bottom: 10px; filter: drop-shadow(0 0 20px rgba(255,215,0,0.8)); }
+  @keyframes cakeBounce { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-15px) scale(1.08)} }
+  .hero-title { font-family: 'Baloo Thambi 2', cursive; font-size: clamp(36px,8vw,80px); font-weight: 800; line-height: 1.1; margin-bottom: 16px; background: linear-gradient(135deg,#ffd700,#ff4d8d,#00e5ff,#ffd700); background-size: 300% 300%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 3s ease infinite; }
+  @keyframes shimmer { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  .hero-sub { font-size: clamp(16px,3vw,22px); color: rgba(255,255,255,0.75); margin-bottom: 30px; font-weight: 500; letter-spacing: 1px; }
+  .hero-name { font-family: 'Baloo Thambi 2', cursive; font-size: clamp(28px,6vw,60px); font-weight: 700; color: var(--gold); animation: glow 2s ease-in-out infinite alternate; margin-bottom: 30px; }
+  @keyframes glow { from{text-shadow:0 0 20px rgba(255,215,0,0.5)} to{text-shadow:0 0 40px rgba(255,215,0,0.9),0 0 80px rgba(255,215,0,0.5)} }
+  .emoji-row { font-size: 36px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 40px; }
+  .emoji-row span { display: inline-block; animation: floatEmoji var(--d,2s) ease-in-out infinite; animation-delay: var(--delay,0s); }
+  @keyframes floatEmoji { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-12px) rotate(10deg)} }
+  .scroll-hint { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; color: rgba(255,255,255,0.4); font-size: 13px; animation: fadeInOut 2s ease-in-out infinite; }
+  .scroll-hint .arrow { font-size: 22px; animation: bounceDown 1.5s ease-in-out infinite; }
+  @keyframes bounceDown { 0%,100%{transform:translateY(0)} 50%{transform:translateY(8px)} }
+  @keyframes fadeInOut { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  section { padding: 80px 20px; max-width: 960px; margin: 0 auto; }
+  .section-title { font-family: 'Baloo Thambi 2', cursive; font-size: clamp(24px,5vw,42px); font-weight: 700; text-align: center; margin-bottom: 40px; }
+  .section-title::after { content:''; display:block; width:80px; height:3px; background:linear-gradient(90deg,var(--pink),var(--gold)); border-radius:99px; margin:12px auto 0; }
+
+  /* ===================== PHOTO-QUIZ GRID ===================== */
+  .photo-quiz-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+
+  .pq-card {
+    border-radius: 22px;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(10px);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    position: relative;
+  }
+  .pq-card.unlocked { border-color: var(--green); box-shadow: 0 0 30px rgba(0,255,136,0.25); }
+
+  /* — photo area — */
+  .pq-photo { position: relative; aspect-ratio: 3/4; overflow: hidden; }
+  .pq-photo img { width:100%; height:100%; object-fit:contain; display:block; transition: filter 0.5s; }
+
+  /* locked overlay */
+  .pq-lock-overlay {
+    position: absolute; inset: 0;
+    background: rgba(10,0,21,0.82);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; transition: opacity 0.5s;
+  }
+  .pq-lock-overlay .lock-ico { font-size: 42px; animation: cakeBounce 2s ease-in-out infinite; }
+  .pq-lock-overlay .lock-lbl { font-size: 13px; color: rgba(255,255,255,0.5); }
+  .pq-card.unlocked .pq-lock-overlay { opacity: 0; pointer-events: none; }
+
+  /* — question panel — */
+  .pq-panel { padding: 18px 16px 20px; }
+
+  .pq-q-num { font-size: 11px; letter-spacing: 2px; color: rgba(255,255,255,0.35); text-transform: uppercase; margin-bottom: 6px; }
+  .pq-q-text { font-family: 'Baloo Thambi 2', cursive; font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 14px; line-height: 1.4; }
+
+  /* options */
+  .pq-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .pq-opt {
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 10px 8px;
+    font-family: 'Noto Sans Tamil', sans-serif;
+    font-size: 13px; color: #fff;
+    cursor: pointer;
+    transition: all 0.22s;
+    text-align: center; line-height: 1.3;
+  }
+  .pq-opt:hover:not(:disabled) { background: rgba(255,215,0,0.1); border-color: var(--gold); transform: translateY(-2px); }
+  .pq-opt.correct { background: rgba(0,255,136,0.15); border-color: var(--green); box-shadow: 0 0 14px rgba(0,255,136,0.3); animation: correctPop .35s ease; }
+  .pq-opt.wrong { background: rgba(255,60,60,0.15); border-color: #ff4444; animation: wrongShake .35s ease; }
+  @keyframes correctPop { 0%{transform:scale(1)} 50%{transform:scale(1.07)} 100%{transform:scale(1)} }
+  @keyframes wrongShake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+  .pq-feedback { font-size: 13px; font-weight: 600; min-height: 20px; margin-bottom: 6px; }
+  .pq-feedback.ok { color: var(--green); }
+  .pq-feedback.err { color: #ff6b6b; }
+
+  /* — SCANNER — */
+  .pq-scanner {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 0 4px;
+  }
+  .pq-scanner.show { display: flex; }
+
+  .scanner-wrap {
+    position: relative;
+    width: 130px; height: 130px;
+  }
+
+  /* QR grid squares (decorative) */
+  .scanner-qr {
+    width: 130px; height: 130px;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 2px;
+    opacity: 0.25;
+  }
+  .scanner-qr span {
+    border-radius: 2px;
+    background: var(--cyan);
+  }
+
+  /* scanning line */
+  .scanner-line {
+    position: absolute;
+    left: 6px; right: 6px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    box-shadow: 0 0 8px var(--cyan), 0 0 20px var(--cyan);
+    top: 0;
+    animation: scanLine 1.8s ease-in-out infinite;
+  }
+  @keyframes scanLine { 0%,100%{top:6px} 50%{top:118px} }
+
+  /* corner brackets */
+  .scanner-wrap::before,
+  .scanner-wrap::after,
+  .scanner-br::before,
+  .scanner-br::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    border-color: var(--cyan);
+    border-style: solid;
+  }
+  .scanner-wrap::before { top:0; left:0; border-width: 3px 0 0 3px; }
+  .scanner-wrap::after  { top:0; right:0; border-width: 3px 3px 0 0; }
+  .scanner-br::before { bottom:0; left:0; border-width: 0 0 3px 3px; }
+  .scanner-br::after  { bottom:0; right:0; border-width: 0 3px 3px 0; }
+
+  /* progress bar */
+  .scan-progress-wrap { width: 130px; height: 5px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; }
+  .scan-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--cyan), var(--green)); border-radius: 99px; transition: width 0.1s linear; }
+
+  .scanner-lbl { font-size: 12px; color: var(--cyan); letter-spacing: 1px; animation: fadeInOut 1.5s ease-in-out infinite; }
+
+  /* scan btn */
+  .scan-btn {
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    color: #fff; border: none; border-radius: 50px;
+    padding: 9px 22px; font-size: 14px;
+    font-family: 'Baloo Thambi 2', cursive; font-weight: 700;
+    cursor: pointer; transition: all 0.25s;
+    box-shadow: 0 4px 18px rgba(0,229,255,0.3);
+  }
+  .scan-btn:hover { transform: scale(1.07); }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* unlock badge */
+  .unlocked-badge {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0 4px;
+    font-family: 'Baloo Thambi 2', cursive;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green);
+    animation: correctPop .4s ease;
+  }
+  .unlocked-badge.show { display: flex; }
+
+  /* TIMELINE */
+  .timeline { position: relative; padding-left: 40px; }
+  .timeline::before { content:''; position:absolute; left:16px; top:0; bottom:0; width:2px; background:linear-gradient(180deg,var(--pink),var(--purple),var(--cyan)); }
+  .timeline-item { position:relative; margin-bottom:36px; opacity:0; transform:translateX(-30px); transition:all .6s ease; }
+  .timeline-item.visible { opacity:1; transform:translateX(0); }
+  .timeline-dot { position:absolute; left:-31px; top:6px; width:14px; height:14px; border-radius:50%; background:var(--pink); border:3px solid var(--bg); box-shadow:0 0 12px var(--pink); }
+  .timeline-card { background:var(--card); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:18px 20px; backdrop-filter:blur(10px); transition:border-color .3s,transform .3s; }
+  .timeline-card:hover { border-color:var(--pink); transform:translateX(8px); }
+  .timeline-emoji { font-size:28px; margin-bottom:6px; display:block; }
+  .timeline-text { font-size:15px; color:rgba(255,255,255,0.85); line-height:1.7; }
+
+  /* WISH */
+  .wish-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; }
+  .wish-card { background:var(--card); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:28px 22px; text-align:center; backdrop-filter:blur(10px); opacity:0; transform:translateY(30px); transition:all .5s ease; position:relative; overflow:hidden; }
+  .wish-card::before { content:''; position:absolute; inset:0; background:radial-gradient(circle at 50% 0%,var(--accent,rgba(255,77,141,0.15)),transparent 70%); pointer-events:none; }
+  .wish-card.visible { opacity:1; transform:translateY(0); }
+  .wish-card:hover { border-color:var(--accent-border,var(--pink)); transform:translateY(-6px) scale(1.02); box-shadow:0 20px 50px rgba(0,0,0,0.4); }
+  .wish-icon { font-size:42px; margin-bottom:14px; display:block; animation:floatEmoji 3s ease-in-out infinite; }
+  .wish-title { font-family:'Baloo Thambi 2',cursive; font-size:18px; font-weight:700; color:#fff; margin-bottom:10px; }
+  .wish-text { font-size:14px; color:rgba(255,255,255,0.7); line-height:1.7; }
+
+  /* FINAL */
+  .final-section { text-align:center; padding:80px 20px 120px; position:relative; z-index:10; }
+  .final-msg { font-family:'Baloo Thambi 2',cursive; font-size:clamp(20px,4vw,36px); font-weight:700; color:#fff; max-width:700px; margin:0 auto 30px; line-height:1.6; }
+  .final-sign { font-size:16px; color:rgba(255,255,255,0.55); margin-bottom:40px; }
+  .fireworks-btn { background:linear-gradient(135deg,var(--pink),var(--orange)); color:#fff; border:none; border-radius:50px; padding:16px 40px; font-size:18px; font-family:'Baloo Thambi 2',cursive; font-weight:700; cursor:pointer; transition:all .3s; box-shadow:0 8px 30px rgba(255,77,141,0.4); letter-spacing:1px; animation:btnPulse 2.5s ease-in-out infinite; }
+  @keyframes btnPulse { 0%,100%{box-shadow:0 8px 30px rgba(255,77,141,0.4)} 50%{box-shadow:0 8px 50px rgba(255,77,141,0.8)} }
+  .fireworks-btn:hover { transform:scale(1.08) translateY(-3px); }
+
+  /* FLOATING HEARTS */
+  .floating-hearts { position:fixed; bottom:0; left:0; right:0; height:100vh; pointer-events:none; z-index:2; overflow:hidden; }
+  .fheart { position:absolute; bottom:-50px; font-size:var(--s,24px); animation:floatUp var(--dur,6s) ease-in var(--delay,0s) infinite; opacity:0; }
+  @keyframes floatUp { 0%{transform:translateY(0) scale(.5);opacity:0} 10%{opacity:1} 90%{opacity:.6} 100%{transform:translateY(-100vh) scale(1) rotate(var(--r,20deg));opacity:0} }
+
+  .divider { width:100%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); margin:0 auto; max-width:600px; }
+  .reveal { opacity:0; transform:translateY(40px); transition:all .7s ease; }
+  .reveal.visible { opacity:1; transform:translateY(0); }
+
+  /* LIGHTBOX */
+  .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(10px); }
+  .lightbox.active { display:flex; }
+  .lightbox img { max-width:90vw; max-height:90vh; border-radius:16px; border:2px solid rgba(255,255,255,0.2); animation:zoomIn .3s ease; }
+  @keyframes zoomIn { from{transform:scale(.7);opacity:0} to{transform:scale(1);opacity:1} }
+  .lightbox-close { position:absolute; top:20px; right:24px; font-size:36px; color:#fff; cursor:pointer; opacity:.7; transition:opacity .2s; }
+  .lightbox-close:hover { opacity:1; }
+
+  @media(max-width:480px){ .pq-options{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+<canvas id="particles-canvas"></canvas>
+<canvas id="confetti-canvas"></canvas>
+<div class="floating-hearts" id="floating-hearts"></div>
+<div class="lightbox" id="lightbox">
+  <span class="lightbox-close" onclick="closeLightbox()">✕</span>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<div class="content">
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="cake-emoji">🎂</span>
+    <h1 class="hero-title">பிறந்தநாள்<br>வாழ்த்துக்கள்!</h1>
+    <p class="hero-sub">என் இதயத்தின் இரட்டை துண்டுக்கு</p>
+    <div class="hero-name">என் அன்பு நண்பா 💛</div>
+    <div class="emoji-row">
+      <span style="--d:2s;--delay:0s">🎉</span>
+      <span style="--d:2.3s;--delay:.2s">🎈</span>
+      <span style="--d:1.8s;--delay:.4s">🌟</span>
+      <span style="--d:2.5s;--delay:.1s">🎁</span>
+      <span style="--d:2.1s;--delay:.3s">🥳</span>
+      <span style="--d:1.9s;--delay:.5s">❤️</span>
+      <span style="--d:2.2s;--delay:.6s">🎊</span>
+    </div>
+    <div class="scroll-hint"><span>கீழே பார்</span><span class="arrow">↓</span></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PHOTO QUIZ SECTION -->
+  <section>
+    <h2 class="section-title reveal">📸 நம் நினைவுகள் — Quiz விடை சொன்னா படம் திறக்கும்! 🔐</h2>
+    <p class="reveal" style="text-align:center;color:rgba(255,255,255,0.55);margin:-20px 0 36px;font-size:14px;">
+      சரியான பதில் → உடனே படம் காட்டும் ✅ &nbsp;|&nbsp; தெரியலன்னா → Scanner scan பண்ணு 🔍
+    </p>
+
+    <div class="photo-quiz-grid" id="pq-grid">
+      
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- TIMELINE -->
+  <section>
+    <h2 class="section-title reveal">🕐 நம் நட்பின் பயணம்</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card"><span class="timeline-emoji">🌱</span><p class="timeline-text">சின்னதாக ஆரம்பித்த நமது நட்பு — ஒரு சிரிப்பில் இருந்து உருவான பிணைப்பு.</p></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--gold);box-shadow:0 0 12px var(--gold)"></div>
+        <div class="timeline-card"><span class="timeline-emoji">🍜</span><p class="timeline-text">பானி புரி சாப்பிட்டு சிரித்த நேரம் — அந்த சந்தோஷம் இன்னும் மனசில் இருக்கு!</p></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--cyan);box-shadow:0 0 12px var(--cyan)"></div>
+        <div class="timeline-card"><span class="timeline-emoji">🌊</span><p class="timeline-text">கடற்கரையில் கழித்த நேரம் — அலைகள் போல் நம் நட்பும் நீண்டு கொண்டே போகட்டும்.</p></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--purple);box-shadow:0 0 12px var(--purple)"></div>
+        <div class="timeline-card"><span class="timeline-emoji">👶</span><p class="timeline-text">குடும்பம் வளர்ந்தது — நீயும் உன் குடும்பமும் எப்போதும் மகிழ்ச்சியாக இருக்கட்டும்.</p></div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--orange);box-shadow:0 0 12px var(--orange)"></div>
+        <div class="timeline-card"><span class="timeline-emoji">🎂</span><p class="timeline-text">இன்று உன் பிறந்தநாள் — இந்த நாளில் உனக்கு ஆயிரம் வாழ்த்துக்கள்! 🎉</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- WISH CARDS -->
+  <section>
+    <h2 class="section-title reveal">💌 என் இதய வாழ்த்துக்கள்</h2>
+    <div class="wish-grid">
+      <div class="wish-card" style="--accent:rgba(255,77,141,0.15);--accent-border:var(--pink)"><span class="wish-icon">🌟</span><div class="wish-title">வெற்றி கிடைக்கட்டும்</div><p class="wish-text">நீ தேடும் எல்லா கனவுகளும் நனவாகட்டும்!</p></div>
+      <div class="wish-card" style="--accent:rgba(255,215,0,0.15);--accent-border:var(--gold)"><span class="wish-icon">❤️</span><div class="wish-title">அன்பு நிறைந்திருக்கட்டும்</div><p class="wish-text">உன் வாழ்வில் அன்பும் மகிழ்ச்சியும் நிறைந்திருக்கட்டும்!</p></div>
+      <div class="wish-card" style="--accent:rgba(0,229,255,0.15);--accent-border:var(--cyan)"><span class="wish-icon">🏆</span><div class="wish-title">உடல் நலம் காக்கட்டும்</div><p class="wish-text">நீண்ட ஆயுளும் நல்ல உடல் நலமும் பெற்று நூறு ஆண்டு வாழ்க!</p></div>
+      <div class="wish-card" style="--accent:rgba(155,89,182,0.15);--accent-border:var(--purple)"><span class="wish-icon">🤝</span><div class="wish-title">நம் நட்பு என்றும் இருக்கட்டும்</div><p class="wish-text">எந்த பிறவியிலும் நாம் நண்பர்களாகவே இருப்போம்!</p></div>
+      <div class="wish-card" style="--accent:rgba(255,112,67,0.15);--accent-border:var(--orange)"><span class="wish-icon">😄</span><div class="wish-title">சிரிப்பு மறைய வேண்டாம்</div><p class="wish-text">உன் சிரிப்பு என்னை மகிழ்விக்கிறது. அது எந்த நாளும் மறையாமல் இருக்கட்டும்!</p></div>
+      <div class="wish-card" style="--accent:rgba(0,255,136,0.15);--accent-border:var(--green)"><span class="wish-icon">🌈</span><div class="wish-title">நல்ல எதிர்காலம் கிடைக்கட்டும்</div><p class="wish-text">உன் வாழ்வின் ஒவ்வொரு நாளும் அழகாக அமையட்டும்!</p></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <div class="final-section">
+    <p class="final-msg reveal">"நட்பு என்பது உறவால் கட்டப்படவில்லை — இதயத்தால் கட்டப்பட்டது. நீ என் வாழ்வின் மிகவும் விலைமதிப்பற்ற நண்பன்." 💛</p>
+    <p class="final-sign reveal">— உன் BFF-இல் இருந்து, அன்போடு ❤️</p>
+    <button class="fireworks-btn" onclick="launchFireworks()">🎆 Fireworks வெடிக்க!</button>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// PHOTO + QUESTION DATA
+// ✏️ மாத்தணும்னா: src, question, options[], correct (0-based index) மாத்துக்கோ
+// ============================================================
+const photoQuizData = [
+  {
+    src: "social_science_scene1_teacher_sitting.svg",
+    src: "social_science_scene2_teacher_shock_friend_falls.svg",
+    label: "BFF Selfie 🤝",
+    heart: "❤️",
+    question: "நம்ம ஸ்கூல் டைம்ல நீ பெஞ்ச் கீழ தூங்கி சக்திவேல் சார் கிட்ட மாட்டிக்கிட்டு அடி வாங்குனது ஞாபகம் இருக்கா? அப்போ அந்த பெஞ்ச்ல யாரெல்லாம் இருந்தோம்?",
+    options: [ "அஜீத்... தனுஷ்.... விக்னேஷ்", "சரத் .... தமிழ் .... ஜீவா","பரத் .... அஜீத் .... சரத்", "சரத் .... தமிழ் .... ஜீவா"],
+    correct: 2
+  },
+  {
+    src: "WhatsApp Image 2026-05-30 at 9.58.46 AM.jpeg",
+    label: "பானி புரி கேங்! 😋",
+    heart: "🍜",
+    question: "பானி புரி சாப்பிடும்போது நீ என்ன சொன்னேன்?",
+    options: ["இன்னும் கொடு!", "Spicy-ஆ இருக்கு", "நான் பணம் கட்டுறேன்", "Photo எடு!"],
+    correct: 3
+  },
+  {
+    src: "WhatsApp Image 2026-05-30 at 9.48.32 AM.jpeg",
+    label: "அழகான தருணம் 🌸",
+    heart: "👶",
+    question: "இந்த நினைவைப் பற்றி நீ என்ன நினைக்கிறாய்??",
+    options: ["மறக்கவே முடியாது", "சூப்பரா இருந்துச்சு", "Photo நல்லா வந்துச்சு", "எல்லாமே சரியா வந்துச்சு"],
+    correct: 0
+  },
+  {
+    src: "Screenshot 2026-05-30 124033.png",
+    label: "கடற்கரை memory! 🏖️",
+    heart: "🌊",
+    question: "நீ காசு கேக்கும் போது அப்போ தராம இருந்திருந்தா இப்போ என்ன பண்ணிட்டு இருந்திருப்ப?",
+    options: ["சந்தோஷமா இருந்திருப்பா", "எப்பவும் ஏன் டா காசு வாங்கணும் னு இருந்திருக்கும்", "அவ என்ன நல்லா பாத்துக்குறா, சந்தோஷமா தான் இருக்கா", "அன்னைக்கு உன்ன கூட்டிட்டு போயிருக்க கூடாது டா!"],
+    correct: 3
+  },
+  {
+    src: "WhatsApp Image 2026-05-30 at 12.33.35 PM.jpeg",
+    label: "குடும்ப நேரம் 👨‍👩‍👦",
+    heart: "💛",
+    question: "இந்த நட்பு எத்தனை ஆண்டுகள் நீடிக்கும்?",
+    options: ["5 ஆண்டு", "10 ஆண்டு", "எப்போதும்!", "நூறு ஆண்டு"],
+    correct: 2
+  }
+];
+
+// ============================================================
+// BUILD GRID
+// ============================================================
+function buildGrid() {
+  const grid = document.getElementById('pq-grid');
+  photoQuizData.forEach((item, idx) => {
+    grid.innerHTML += `
+      <div class="pq-card" id="pqcard-${idx}">
+        <div class="pq-photo">
+          <img src="${item.src}" alt="${item.label}" >
+          <div class="pq-lock-overlay">
+            <span class="lock-ico">🔒</span>
+            <span class="lock-lbl">சரியான பதில் சொல்</span>
+          </div>
+        </div>
+        <div class="pq-panel">
+          <div class="pq-q-num">படம் ${idx+1} / ${photoQuizData.length}</div>
+          <div class="pq-q-text" id="pqq-${idx}">${item.question}</div>
+          <div class="pq-options" id="pqopts-${idx}">
+            ${item.options.map((o,i) => `<button class="pq-opt" onclick="pickOpt(${idx},${i},this)">${o}</button>`).join('')}
+          </div>
+          <div class="pq-feedback" id="pqfb-${idx}"></div>
+
+          <!-- SCANNER (shown on wrong answer) -->
+          <div class="pq-scanner" id="pqscanner-${idx}">
+            <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:4px;">தெரியலையா? Scanner-ல் scan பண்ணு 👇</div>
+            <div class="scanner-wrap" id="swrap-${idx}">
+              <div class="scanner-qr" id="sqr-${idx}"></div>
+              <div class="scanner-line"></div>
+              <div class="scanner-br"></div>
+            </div>
+            <div class="scan-progress-wrap"><div class="scan-progress-bar" id="spbar-${idx}"></div></div>
+            <div class="scanner-lbl" id="slbl-${idx}">Scanning...</div>
+            <button class="scan-btn" id="scanbtn-${idx}" onclick="startScan(${idx})">🔍 Scan பண்ணு</button>
+          </div>
+
+          <!-- Unlocked badge -->
+          <div class="unlocked-badge" id="pqbadge-${idx}">✅ படம் திறக்கப்பட்டது! 🎉</div>
+        </div>
+      </div>`;
+  });
+
+  // Fill QR grid squares randomly
+  photoQuizData.forEach((_, idx) => {
+    const qr = document.getElementById(`sqr-${idx}`);
+    for (let i = 0; i < 64; i++) {
+      const s = document.createElement('span');
+      s.style.opacity = Math.random() > 0.4 ? '1' : '0';
+      qr.appendChild(s);
+    }
+  });
+}
+
+// ============================================================
+// ANSWER PICK
+// ============================================================
+function pickOpt(idx, choiceIdx, btn) {
+  const item = photoQuizData[idx];
+  const allBtns = document.querySelectorAll(`#pqopts-${idx} .pq-opt`);
+  const fb = document.getElementById(`pqfb-${idx}`);
+
+  allBtns.forEach(b => b.disabled = true);
+
+  if (choiceIdx === item.correct) {
+    btn.classList.add('correct');
+    fb.textContent = '✅ சரியான பதில்! படம் திறக்கிறது...';
+    fb.className = 'pq-feedback ok';
+    spawnConfetti(25);
+    setTimeout(() => unlockPhoto(idx), 700);
+  } else {
+    btn.classList.add('wrong');
+    allBtns[item.correct].classList.add('correct');
+    fb.textContent = '❌ தவறு! Scanner-ல் scan பண்ணி திற!';
+    fb.className = 'pq-feedback err';
+    setTimeout(() => {
+      document.getElementById(`pqscanner-${idx}`).classList.add('show');
+    }, 600);
+  }
+}
+
+// ============================================================
+// SCAN ANIMATION
+// ============================================================
+const scanTimers = {};
+
+function startScan(idx) {
+  const btn = document.getElementById(`scanbtn-${idx}`);
+  const bar = document.getElementById(`spbar-${idx}`);
+  const lbl = document.getElementById(`slbl-${idx}`);
+  btn.disabled = true;
+
+  const labels = ['Analyzing...', 'Verifying...', 'Decoding...', 'Unlocking...', '100% ✅'];
+  let progress = 0;
+  let labelIdx = 0;
+
+  scanTimers[idx] = setInterval(() => {
+    progress += Math.random() * 4 + 1.5;
+    if (progress > 100) progress = 100;
+    bar.style.width = progress + '%';
+
+    labelIdx = Math.floor((progress / 100) * (labels.length - 1));
+    lbl.textContent = labels[labelIdx];
+
+    if (progress >= 100) {
+      clearInterval(scanTimers[idx]);
+      spawnConfetti(30);
+      setTimeout(() => unlockPhoto(idx), 400);
+    }
+  }, 80);
+}
+
+// ============================================================
+// UNLOCK PHOTO
+// ============================================================
+function unlockPhoto(idx) {
+  const card = document.getElementById(`pqcard-${idx}`);
+  card.classList.add('unlocked');
+
+  // hide scanner & feedback area
+  const scanner = document.getElementById(`pqscanner-${idx}`);
+  scanner.classList.remove('show');
+  const fb = document.getElementById(`pqfb-${idx}`);
+  fb.style.display = 'none';
+
+  // show badge
+  document.getElementById(`pqbadge-${idx}`).classList.add('show');
+
+  // make photo clickable
+  const img = card.querySelector('.pq-photo img');
+  card.querySelector('.pq-photo').style.cursor = 'pointer';
+  card.querySelector('.pq-photo').onclick = () => openLightbox(img.src);
+
+  spawnConfetti(20);
+  if ([...document.querySelectorAll('.pq-card.unlocked')].length === photoQuizData.length) {
+    setTimeout(() => {
+      spawnConfetti(120);
+      explode(window.innerWidth*.3, window.innerHeight*.4);
+      explode(window.innerWidth*.7, window.innerHeight*.4);
+    }, 300);
+  }
+}
+
+// ============================================================
+// STARS
+// ============================================================
+const starsCanvas = document.getElementById('stars-canvas');
+const sCtx = starsCanvas.getContext('2d');
+let stars = [];
+function initStars() {
+  starsCanvas.width = window.innerWidth; starsCanvas.height = window.innerHeight; stars = [];
+  for (let i=0;i<200;i++) stars.push({x:Math.random()*starsCanvas.width,y:Math.random()*starsCanvas.height,r:Math.random()*1.5+.3,speed:Math.random()*.02+.005,phase:Math.random()*Math.PI*2});
+}
+function drawStars() {
+  sCtx.clearRect(0,0,starsCanvas.width,starsCanvas.height);
+  const t=Date.now()*.001;
+  stars.forEach(s=>{const a=.3+.7*Math.abs(Math.sin(t*s.speed*10+s.phase));sCtx.beginPath();sCtx.arc(s.x,s.y,s.r,0,Math.PI*2);sCtx.fillStyle=`rgba(255,255,255,${a})`;sCtx.fill();});
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+const pCanvas=document.getElementById('particles-canvas'),pCtx=pCanvas.getContext('2d');let particles=[];
+function initParticles(){
+  pCanvas.width=window.innerWidth;pCanvas.height=window.innerHeight;particles=[];
+  const colors=['#ff4d8d','#ffd700','#00e5ff','#9b59b6','#ff7043'];
+  for(let i=0;i<40;i++) particles.push({x:Math.random()*pCanvas.width,y:Math.random()*pCanvas.height,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:Math.random()*3+1,color:colors[Math.floor(Math.random()*colors.length)],alpha:Math.random()*.4+.1});
+}
+function drawParticles(){
+  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=pCanvas.width;if(p.x>pCanvas.width)p.x=0;if(p.y<0)p.y=pCanvas.height;if(p.y>pCanvas.height)p.y=0;pCtx.beginPath();pCtx.arc(p.x,p.y,p.r,0,Math.PI*2);pCtx.fillStyle=p.color+Math.floor(p.alpha*255).toString(16).padStart(2,'0');pCtx.fill();pCtx.shadowBlur=8;pCtx.shadowColor=p.color;});
+  pCtx.shadowBlur=0;
+}
+
+// ============================================================
+// CONFETTI
+// ============================================================
+const cCanvas=document.getElementById('confetti-canvas'),cCtx=cCanvas.getContext('2d');let confetti=[];
+function initConfetti(){cCanvas.width=window.innerWidth;cCanvas.height=window.innerHeight;}
+function spawnConfetti(n){
+  const colors=['#ff4d8d','#ffd700','#00e5ff','#9b59b6','#ff7043','#00ff88','#ff6b6b','#fff700'];
+  for(let i=0;i<n;i++) confetti.push({x:Math.random()*cCanvas.width,y:-20,vx:(Math.random()-.5)*6,vy:Math.random()*4+2,r:Math.random()*7+4,color:colors[Math.floor(Math.random()*colors.length)],rot:Math.random()*Math.PI*2,rotSpeed:(Math.random()-.5)*.2,shape:Math.random()>.5?'rect':'circle',life:1,decay:Math.random()*.005+.002});
+}
+function drawConfetti(){
+  cCtx.clearRect(0,0,cCanvas.width,cCanvas.height);
+  confetti=confetti.filter(c=>c.life>0&&c.y<cCanvas.height+30);
+  confetti.forEach(c=>{c.x+=c.vx;c.y+=c.vy;c.vy+=.05;c.vx*=.99;c.rot+=c.rotSpeed;c.life-=c.decay;cCtx.save();cCtx.translate(c.x,c.y);cCtx.rotate(c.rot);cCtx.globalAlpha=c.life;cCtx.fillStyle=c.color;if(c.shape==='rect')cCtx.fillRect(-c.r/2,-c.r/4,c.r,c.r/2);else{cCtx.beginPath();cCtx.arc(0,0,c.r/2,0,Math.PI*2);cCtx.fill();}cCtx.restore();});
+}
+
+// ============================================================
+// FIREWORKS
+// ============================================================
+let fireworks=[];
+function launchFireworks(){
+  const btn=document.querySelector('.fireworks-btn');
+  btn.textContent='🎆 வெடிக்கிறது...';
+  setTimeout(()=>btn.textContent='🎆 Fireworks வெடிக்க!',3000);
+  for(let b=0;b<8;b++) setTimeout(()=>{explode(Math.random()*cCanvas.width,Math.random()*cCanvas.height*.6);spawnConfetti(30);},b*350);
+}
+function explode(cx,cy){
+  const colors=['#ff4d8d','#ffd700','#00e5ff','#ff7043','#9b59b6','#00ff88'];
+  const color=colors[Math.floor(Math.random()*colors.length)];
+  for(let i=0;i<80;i++){const angle=(Math.PI*2/80)*i,speed=Math.random()*6+2;fireworks.push({x:cx,y:cy,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,r:Math.random()*3+1,color,life:1,decay:Math.random()*.02+.015});}
+}
+function drawFireworks(){
+  fireworks=fireworks.filter(f=>f.life>0);
+  fireworks.forEach(f=>{f.x+=f.vx;f.y+=f.vy;f.vy+=.08;f.vx*=.97;f.life-=f.decay;cCtx.beginPath();cCtx.arc(f.x,f.y,f.r,0,Math.PI*2);cCtx.fillStyle=f.color+Math.floor(f.life*255).toString(16).padStart(2,'0');cCtx.shadowBlur=10;cCtx.shadowColor=f.color;cCtx.fill();cCtx.shadowBlur=0;});
+}
+
+// ============================================================
+// HEARTS
+// ============================================================
+function spawnHearts(){
+  const c=document.getElementById('floating-hearts'),e=['❤️','💛','💕','💖','🌸','⭐','✨','💗'];
+  setInterval(()=>{const h=document.createElement('div');h.className='fheart';h.textContent=e[Math.floor(Math.random()*e.length)];h.style.setProperty('--s',(Math.random()*20+14)+'px');h.style.setProperty('--dur',(Math.random()*5+6)+'s');h.style.setProperty('--delay','0s');h.style.setProperty('--r',(Math.random()*40-20)+'deg');h.style.left=Math.random()*100+'%';c.appendChild(h);setTimeout(()=>h.remove(),12000);},800);
+}
+
+// ============================================================
+// SCROLL REVEAL
+// ============================================================
+function checkReveal(){
+  document.querySelectorAll('.reveal,.wish-card,.timeline-item').forEach(el=>{if(el.getBoundingClientRect().top<window.innerHeight*.88)el.classList.add('visible');});
+}
+
+// ============================================================
+// LIGHTBOX
+// ============================================================
+function openLightbox(src){document.getElementById('lightbox-img').src=src;document.getElementById('lightbox').classList.add('active');}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('active');}
+document.getElementById('lightbox').addEventListener('click',function(e){if(e.target===this)closeLightbox();});
+
+// ============================================================
+// MAIN LOOP
+// ============================================================
+function loop(){drawStars();drawParticles();drawConfetti();drawFireworks();requestAnimationFrame(loop);}
+
+window.addEventListener('resize',()=>{initStars();initParticles();initConfetti();});
+document.addEventListener('scroll',checkReveal);
+
+buildGrid();
+initStars();initParticles();initConfetti();
+spawnHearts();checkReveal();
+setTimeout(()=>spawnConfetti(80),500);
+setTimeout(()=>spawnConfetti(60),1500);
+loop();
+setTimeout(()=>{explode(window.innerWidth*.2,window.innerHeight*.3);explode(window.innerWidth*.8,window.innerHeight*.25);},1000);
+setTimeout(()=>explode(window.innerWidth*.5,window.innerHeight*.2),2000);
+</script>
+</body>
+</html>
